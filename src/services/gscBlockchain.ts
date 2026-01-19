@@ -300,10 +300,14 @@ class GSCBlockchainService {
 
   // Create transaction
   async createTransaction(sender: string, receiver: string, amount: number, fee: number): Promise<GSCTransaction> {
-    // Generate timestamp with decimal precision for clone compatibility
-    const timestamp = Date.now() / 1000 + Math.random() * 0.1;
+    // Generate timestamp as integer milliseconds for clone compatibility
+    const timestamp = Date.now();
     const txString = `${sender}${receiver}${amount}${fee}${timestamp}`;
     const tx_id = await this.generateGSCHash(txString, 64);
+    
+    // Generate short signature hash (16 characters)
+    const sigString = `${tx_id}${timestamp}`;
+    const signature = await this.generateGSCHash(sigString, 16);
     
     const transaction: GSCTransaction = {
       sender,
@@ -312,7 +316,7 @@ class GSCBlockchainService {
       fee,
       timestamp,
       tx_id,
-      signature: ""
+      signature
     };
 
     return transaction;
@@ -638,15 +642,19 @@ class GSCBlockchainService {
         return;
       }
       
-      // Send raw transaction format that matches blockchain chain structure
+      // Send wrapper transaction format that matches clone project requirements
       const transactionData = {
-        sender: transaction.sender,
-        receiver: transaction.receiver,
-        amount: parseFloat(transaction.amount.toString()),
-        fee: parseFloat(transaction.fee.toString()),
-        timestamp: parseFloat(transaction.timestamp.toString()),
-        signature: transaction.signature,
-        tx_id: transaction.tx_id
+        type: "GSC_TRANSACTION",
+        timestamp: new Date().toISOString(),
+        transaction: {
+          tx_id: transaction.tx_id,
+          sender: transaction.sender,
+          receiver: transaction.receiver,
+          amount: parseInt(transaction.amount.toString()),
+          fee: parseFloat(transaction.fee.toString()),
+          timestamp: parseInt(transaction.timestamp.toString()),
+          signature: transaction.signature
+        }
       };
       
       const transactionMessage = JSON.stringify(transactionData, null, 2);
