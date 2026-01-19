@@ -300,14 +300,14 @@ class GSCBlockchainService {
 
   // Create transaction
   async createTransaction(sender: string, receiver: string, amount: number, fee: number): Promise<GSCTransaction> {
-    // Generate timestamp as integer milliseconds for clone compatibility
-    const timestamp = Date.now();
+    // Generate timestamp with decimal precision as per documentation
+    const timestamp = Date.now() / 1000;
     const txString = `${sender}${receiver}${amount}${fee}${timestamp}`;
     const tx_id = await this.generateGSCHash(txString, 64);
     
-    // Generate short signature hash (16 characters)
-    const sigString = `${tx_id}${timestamp}`;
-    const signature = await this.generateGSCHash(sigString, 16);
+    // Generate signature using tx_id + sender + timestamp as per documentation
+    const signatureData = `${tx_id}${sender}${timestamp}`;
+    const signature = await this.generateGSCHash(signatureData, 16);
     
     const transaction: GSCTransaction = {
       sender,
@@ -650,9 +650,9 @@ class GSCBlockchainService {
           tx_id: transaction.tx_id,
           sender: transaction.sender,
           receiver: transaction.receiver,
-          amount: parseInt(transaction.amount.toString()),
+          amount: parseFloat(transaction.amount.toString()),
           fee: parseFloat(transaction.fee.toString()),
-          timestamp: parseInt(transaction.timestamp.toString()),
+          timestamp: parseFloat(transaction.timestamp.toString()),
           signature: transaction.signature
         }
       };
