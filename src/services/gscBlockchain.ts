@@ -645,7 +645,7 @@ class GSCBlockchainService {
       // Send wrapper transaction format that matches clone project requirements
       const transactionData = {
         type: "GSC_TRANSACTION",
-        timestamp: new Date().toISOString(),
+        timestamp: new Date().toISOString().replace('Z', ''),
         transaction: {
           tx_id: transaction.tx_id,
           sender: transaction.sender,
