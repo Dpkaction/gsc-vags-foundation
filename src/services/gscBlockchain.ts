@@ -343,7 +343,8 @@ class GSCBlockchainService {
   private async signGSCTransaction(tx: GSCTransaction): Promise<string> {
     if (!tx.tx_id) return "";
     const signatureData = `${tx.tx_id}${tx.sender}${tx.timestamp}`;
-    return await this.generateGSCHash(signatureData, 16);
+    const fullSignature = await this.generateGSCHash(signatureData, 64);
+    return fullSignature.substring(0, 16); // Take first 16 characters
   }
 
   // Send transaction
