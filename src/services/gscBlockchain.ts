@@ -642,19 +642,15 @@ class GSCBlockchainService {
         return;
       }
       
-      // Send wrapper transaction format that matches clone project requirements
+      // Send raw transaction format that matches clone project Transaction dataclass exactly
       const transactionData = {
-        type: "GSC_TRANSACTION",
-        timestamp: new Date().toISOString().replace('Z', ''),
-        transaction: {
-          tx_id: transaction.tx_id,
-          sender: transaction.sender,
-          receiver: transaction.receiver,
-          amount: parseFloat(transaction.amount.toString()),
-          fee: parseFloat(transaction.fee.toString()),
-          timestamp: parseFloat(transaction.timestamp.toString()),
-          signature: transaction.signature
-        }
+        sender: transaction.sender,
+        receiver: transaction.receiver,
+        amount: parseFloat(transaction.amount.toString()),
+        fee: parseFloat(transaction.fee.toString()),
+        timestamp: parseFloat(transaction.timestamp.toString()),
+        signature: transaction.signature,
+        tx_id: transaction.tx_id
       };
       
       const transactionMessage = JSON.stringify(transactionData, null, 2);
