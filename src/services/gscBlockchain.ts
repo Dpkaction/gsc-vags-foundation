@@ -311,8 +311,8 @@ class GSCBlockchainService {
 
   // Create transaction (GSC Asset Foundation Clone format)
   async createTransaction(sender: string, receiver: string, amount: number, fee: number = 0.1): Promise<GSCTransaction> {
-    // Generate timestamp (Unix timestamp in seconds)
-    const timestamp = Date.now() / 1000;
+    // Generate timestamp (Unix timestamp in milliseconds - matching clone format)
+    const timestamp = Date.now();
     
     // Generate transaction ID (64-char hex as per clone mining results)
     const txString = `${sender}${receiver}${amount}${fee}${timestamp}${Math.random()}`;
@@ -680,19 +680,15 @@ class GSCBlockchainService {
         return;
       }
       
-      // Create structured JSON message format (GSC Asset Foundation Clone format)
+      // Send raw transaction format that matches clone project exactly
       const transactionData = {
-        type: "GSC_TRANSACTION",
-        timestamp: new Date().toISOString(),
-        transaction: {
-          tx_id: transaction.id,
-          sender: transaction.from,
-          receiver: transaction.to,
-          amount: transaction.amount,
-          fee: transaction.fee,
-          timestamp: transaction.timestamp,
-          signature: transaction.signature || ""
-        }
+        tx_id: transaction.id,
+        sender: transaction.from,
+        receiver: transaction.to,
+        amount: transaction.amount,
+        fee: transaction.fee,
+        timestamp: transaction.timestamp,
+        signature: transaction.signature || ""
       };
       
       const transactionMessage = JSON.stringify(transactionData, null, 2);
