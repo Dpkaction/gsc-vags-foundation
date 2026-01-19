@@ -1,11 +1,11 @@
 # VAGS - GSC Blockchain Wallet
 
 [![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/Dpkaction/gsc-vags-foundation)
-[![Live Demo](https://img.shields.io/badge/Live%20Demo-Vercel-brightgreen)](https://gsc-vags-foundation.vercel.app)
+[![Live Demo](https://img.shields.io/badge/Live%20Demo-Vercel-brightgreen)](https://gsc-currency-foundation.vercel.app)
 
 ## 🚀 Live Demo
 
-**[View Live Application →](https://gsc-vags-foundation.vercel.app)**
+**[View Live Application →](https://gsc-currency-foundation.vercel.app)**
 
 ## Project info
 
@@ -291,4 +291,4 @@ Need help? We're here for you:
 
 *Empowering the future of digital precious metals*
 
-<!-- Trigger fresh Vercel deployment -->
+<!-- Trigger fresh Vercel deployment - Force update -->
