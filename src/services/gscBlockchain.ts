@@ -329,7 +329,9 @@ class GSCBlockchainService {
     const hashBuffer = await crypto.subtle.digest('SHA-256', data);
     const hashArray = Array.from(new Uint8Array(hashBuffer));
     const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
-    return hashHex.substring(0, length);
+    
+    // Return full 64-character SHA256 hash (matching GSC exe exactly)
+    return hashHex;
   }
 
   // Sign GSC transaction
@@ -348,7 +350,7 @@ class GSCBlockchainService {
       }
       
       let balance = this.getWalletBalance(senderWallet.address);
-      const fee = 0.1;
+      const fee = 0.001; // GSC exe standard fee
       
       if (balance === 0 && senderWallet.balance > 0) {
         balance = senderWallet.balance;
@@ -642,15 +644,19 @@ class GSCBlockchainService {
         return;
       }
       
-      // Send raw transaction format that matches clone project Transaction dataclass exactly
+      // Create structured JSON message format (matching GSC exe test_telegram_import.py exactly)
       const transactionData = {
-        sender: transaction.sender,
-        receiver: transaction.receiver,
-        amount: parseFloat(transaction.amount.toString()),
-        fee: parseFloat(transaction.fee.toString()),
-        timestamp: parseFloat(transaction.timestamp.toString()),
-        signature: transaction.signature,
-        tx_id: transaction.tx_id
+        type: "GSC_TRANSACTION",
+        timestamp: new Date().toISOString(),
+        transaction: {
+          tx_id: transaction.tx_id,
+          sender: transaction.sender,
+          receiver: transaction.receiver,
+          amount: transaction.amount,
+          fee: transaction.fee,
+          timestamp: transaction.timestamp,
+          signature: transaction.signature || ""
+        }
       };
       
       const transactionMessage = JSON.stringify(transactionData, null, 2);
