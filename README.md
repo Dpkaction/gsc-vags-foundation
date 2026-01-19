@@ -291,4 +291,4 @@ Need help? We're here for you:
 
 *Empowering the future of digital precious metals*
 
-<!-- Trigger fresh Vercel deployment - Force update 2 -->
+<!-- Trigger fresh Vercel deployment - GSC Coin Protocol Update -->
