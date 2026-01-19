@@ -638,23 +638,15 @@ class GSCBlockchainService {
         return;
       }
       
-      // Create the structured JSON message format matching clone project requirements
-      const now = new Date();
-      const microseconds = String(now.getMilliseconds() * 1000 + Math.floor(Math.random() * 1000)).padStart(6, '0');
-      const timestampString = now.toISOString().replace('Z', '').replace(/\.\d{3}$/, `.${microseconds}`);
-      
+      // Send raw transaction format that matches blockchain chain structure
       const transactionData = {
-        type: "GSC_TRANSACTION",
-        timestamp: timestampString,
-        transaction: {
-          tx_id: transaction.tx_id,
-          sender: transaction.sender,
-          receiver: transaction.receiver,
-          amount: parseFloat(transaction.amount.toString()),
-          fee: parseFloat(transaction.fee.toString()),
-          timestamp: parseFloat(transaction.timestamp.toString()),
-          signature: transaction.signature
-        }
+        sender: transaction.sender,
+        receiver: transaction.receiver,
+        amount: parseFloat(transaction.amount.toString()),
+        fee: parseFloat(transaction.fee.toString()),
+        timestamp: parseFloat(transaction.timestamp.toString()),
+        signature: transaction.signature,
+        tx_id: transaction.tx_id
       };
       
       const transactionMessage = JSON.stringify(transactionData, null, 2);
