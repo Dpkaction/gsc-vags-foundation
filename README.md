@@ -283,3 +283,5 @@ Need help? We're here for you:
 **Built with  by the GSC VAGS Foundation Team**
 
 *Empowering the future of digital precious metals*
+
+<!-- Trigger fresh Vercel deployment -->
