@@ -1,5 +1,12 @@
 # VAGS - GSC Blockchain Wallet
 
+[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/Dpkaction/gsc-vags-foundation)
+[![Live Demo](https://img.shields.io/badge/Live%20Demo-Vercel-brightgreen)](https://gsc-vags-foundation.vercel.app)
+
+## 🚀 Live Demo
+
+**[View Live Application →](https://gsc-vags-foundation.vercel.app)**
+
 ## Project info
 
 **VAGS (Virtual Asset Gold Standard)** - A production-grade blockchain wallet for GSC (Golden Silver Coin) cryptocurrency.
