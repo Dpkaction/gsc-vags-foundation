@@ -300,7 +300,8 @@ class GSCBlockchainService {
 
   // Create transaction
   async createTransaction(sender: string, receiver: string, amount: number, fee: number): Promise<GSCTransaction> {
-    const timestamp = Date.now();
+    // Generate timestamp with decimal precision for clone compatibility
+    const timestamp = Date.now() / 1000 + Math.random() * 0.1;
     const txString = `${sender}${receiver}${amount}${fee}${timestamp}`;
     const tx_id = await this.generateGSCHash(txString, 64);
     
@@ -311,9 +312,7 @@ class GSCBlockchainService {
       fee,
       timestamp,
       tx_id,
-      signature: await this.signGSCTransaction({
-        sender, receiver, amount, fee, timestamp, tx_id, signature: ""
-      })
+      signature: "" // Empty signature for clone compatibility
     };
 
     return transaction;
@@ -345,7 +344,7 @@ class GSCBlockchainService {
       }
       
       let balance = this.getWalletBalance(senderWallet.address);
-      const fee = 0.1;
+      const fee = 0.001;
       
       if (balance === 0 && senderWallet.balance > 0) {
         balance = senderWallet.balance;
@@ -639,17 +638,17 @@ class GSCBlockchainService {
         return;
       }
       
-      // Create the structured JSON message format
+      // Create the structured JSON message format matching clone project requirements
       const transactionData = {
         type: "GSC_TRANSACTION",
-        timestamp: new Date().toISOString(),
+        timestamp: new Date().toISOString().replace('Z', ''),
         transaction: {
           tx_id: transaction.tx_id,
           sender: transaction.sender,
           receiver: transaction.receiver,
-          amount: transaction.amount,
-          fee: transaction.fee,
-          timestamp: transaction.timestamp,
+          amount: parseFloat(transaction.amount.toString()),
+          fee: parseFloat(transaction.fee.toString()),
+          timestamp: parseFloat(transaction.timestamp.toString()),
           signature: transaction.signature
         }
       };
