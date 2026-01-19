@@ -1,14 +1,22 @@
 import { toast } from "@/hooks/use-toast";
 
-// GSC Blockchain Types
+// GSC Blockchain Types (matching official GSC Coin protocol)
 export interface GSCTransaction {
-  sender: string;
-  receiver: string;
-  amount: number;
-  fee: number;
-  timestamp: number;
-  signature: string;
-  tx_id: string;
+  id: string;              // 16-char uppercase hex ID
+  from: string;            // Sender wallet address (GSC...)
+  to: string;              // Recipient wallet address
+  amount: number;          // Transaction amount in GSC
+  fee: number;             // Network fee in GSC
+  timestamp: number;       // Unix timestamp
+  signature?: string;      // 32-char transaction signature
+  isCoinbase?: boolean;    // Mining reward transaction flag
+  status: 'pending' | 'confirmed';
+  blockNumber?: number;    // Block index when confirmed
+  
+  // Legacy fields for backward compatibility
+  sender?: string;
+  receiver?: string;
+  tx_id?: string;
 }
 
 export interface GSCBlock {
@@ -293,35 +301,42 @@ class GSCBlockchainService {
     return await this.generateGSCHash(privateKey, 64);
   }
 
-  // Generate wallet address (production-grade)
+  // Generate wallet address (GSC Coin protocol standard)
   private async generateWalletAddress(): Promise<{ address: string; private_key: string; public_key: string }> {
     const private_key = this.generatePrivateKey();
     const public_key = await this.generatePublicKey(private_key);
-    const address = 'GSC1' + public_key.slice(0, 32);
+    const address = 'GSC' + public_key.slice(0, 40).toUpperCase(); // 43 chars total: GSC + 40 hex
     return { address, private_key, public_key };
   }
 
-  // Create transaction (production-grade)
+  // Create transaction (GSC Coin protocol standard)
   async createTransaction(sender: string, receiver: string, amount: number, fee: number): Promise<GSCTransaction> {
-    // Generate timestamp with decimal precision
-    const timestamp = Date.now() / 1000;
+    // Generate timestamp (Unix timestamp)
+    const timestamp = Date.now();
     
-    // Create transaction ID using production-grade method
+    // Generate transaction ID (16-char uppercase hex as per GSC protocol)
     const txString = `${sender}${receiver}${amount}${fee}${timestamp}${Math.random()}`;
-    const tx_id = await this.generateGSCHash(txString, 64);
+    const fullHash = await this.generateGSCHash(txString, 64);
+    const id = fullHash.slice(0, 16).toUpperCase();
     
-    // Generate signature using production-grade method
-    const signatureData = `${tx_id}${sender}${timestamp}`;
-    const signature = await this.generateGSCHash(signatureData, 16);
+    // Generate signature (32-char hex as per GSC protocol)
+    const signatureData = `${id}${sender}${timestamp}`;
+    const signature = await this.generateGSCHash(signatureData, 32);
     
     const transaction: GSCTransaction = {
-      sender,
-      receiver,
+      id,
+      from: sender,
+      to: receiver,
       amount,
       fee,
       timestamp,
-      tx_id,
-      signature
+      signature,
+      status: 'pending',
+      
+      // Legacy fields for backward compatibility
+      sender,
+      receiver,
+      tx_id: id
     };
 
     return transaction;
@@ -339,12 +354,12 @@ class GSCBlockchainService {
     return hashHex;
   }
 
-  // Sign GSC transaction
+  // Sign GSC transaction (GSC Coin protocol standard)
   private async signGSCTransaction(tx: GSCTransaction): Promise<string> {
-    if (!tx.tx_id) return "";
-    const signatureData = `${tx.tx_id}${tx.sender}${tx.timestamp}`;
+    if (!tx.id) return "";
+    const signatureData = `${tx.id}${tx.from}${tx.timestamp}`;
     const fullSignature = await this.generateGSCHash(signatureData, 64);
-    return fullSignature.substring(0, 16); // Take first 16 characters
+    return fullSignature.substring(0, 32); // Take first 32 characters for signature
   }
 
   // Send transaction
@@ -414,41 +429,44 @@ class GSCBlockchainService {
     }
   }
 
-  // Validate GSC transaction (production-grade)
+  // Validate GSC transaction (GSC Coin protocol standard)
   private validateGSCTransaction(transaction: GSCTransaction, senderAddress: string): boolean {
+    // Coinbase transactions are always valid
+    if (transaction.isCoinbase) return true;
+    
     // Basic validation
     if (transaction.amount <= 0) return false;
     if (transaction.fee < 0) return false;
-    if (transaction.sender === transaction.receiver) return false;
+    if (transaction.from === transaction.to) return false;
     
     // Address validation
-    if (!this.validateGSCAddress(transaction.sender)) return false;
-    if (!this.validateGSCAddress(transaction.receiver)) return false;
+    if (!this.validateGSCAddress(transaction.from)) return false;
+    if (!this.validateGSCAddress(transaction.to)) return false;
     
-    // Transaction ID validation (must be 64-character hex)
-    if (!transaction.tx_id || transaction.tx_id.length !== 64) return false;
-    if (!/^[0-9a-fA-F]{64}$/.test(transaction.tx_id)) return false;
+    // Transaction ID validation (must be 16-character uppercase hex)
+    if (!transaction.id || transaction.id.length !== 16) return false;
+    if (!/^[0-9A-F]{16}$/.test(transaction.id)) return false;
     
-    // Signature validation (must be 16-character hex)
-    if (transaction.signature && !/^[0-9a-fA-F]{16}$/.test(transaction.signature)) return false;
+    // Signature validation (must be 32-character hex)
+    if (transaction.signature && !/^[0-9a-fA-F]{32}$/.test(transaction.signature)) return false;
     
     return true;
   }
 
-  // Validate GSC address (production-grade)
+  // Validate GSC address (GSC Coin protocol standard)
   private validateGSCAddress(address: string): boolean {
     if (!address || typeof address !== 'string') return false;
     
     // Allow special addresses
     if (address === "COINBASE" || address === "GENESIS" || address === "Genesis" || address === "NETWORK") return true;
     
-    // GSC address format: GSC1 + 32 hex characters
-    if (!address.startsWith("GSC1")) return false;
-    if (address.length !== 36) return false; // GSC1 (4) + 32 hex = 36 total
+    // GSC address format: GSC + 40 hex characters (43 chars total)
+    if (!address.startsWith("GSC")) return false;
+    if (address.length !== 43) return false; // GSC (3) + 40 hex = 43 total
     
-    // Validate hex part
-    const hexPart = address.substring(4);
-    if (!/^[0-9a-fA-F]{32}$/.test(hexPart)) return false;
+    // Validate hex part (uppercase)
+    const hexPart = address.substring(3);
+    if (!/^[0-9A-F]{40}$/.test(hexPart)) return false;
     
     return true;
   }
@@ -662,18 +680,19 @@ class GSCBlockchainService {
         return;
       }
       
-      // Create structured JSON message format (matching GSC exe test_telegram_import.py exactly)
+      // Create structured JSON message format (GSC Coin protocol standard)
       const transactionData = {
         type: "GSC_TRANSACTION",
         timestamp: new Date().toISOString(),
         transaction: {
-          tx_id: transaction.tx_id,
-          sender: transaction.sender,
-          receiver: transaction.receiver,
+          id: transaction.id,
+          from: transaction.from,
+          to: transaction.to,
           amount: transaction.amount,
           fee: transaction.fee,
           timestamp: transaction.timestamp,
-          signature: transaction.signature || ""
+          signature: transaction.signature || "",
+          status: transaction.status || "pending"
         }
       };
       

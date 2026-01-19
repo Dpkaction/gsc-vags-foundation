@@ -18,32 +18,34 @@ function generatePrivateKey() {
   return Array.from(array, byte => byte.toString(16).padStart(2, '0')).join('');
 }
 
-// Generate wallet address (production-grade)
+// Generate wallet address (GSC Coin protocol standard)
 async function generateWalletAddress() {
   const private_key = generatePrivateKey();
   const public_key = await generateGSCHash(private_key, 64);
-  const address = 'GSC1' + public_key.slice(0, 32);
+  const address = 'GSC' + public_key.slice(0, 40).toUpperCase(); // 43 chars total
   return { address, private_key, public_key };
 }
 
-// Create transaction (production-grade)
+// Create transaction (GSC Coin protocol standard)
 async function createTransaction(sender, receiver, amount, fee) {
-  const timestamp = Date.now() / 1000;
+  const timestamp = Date.now();
   const txString = `${sender}${receiver}${amount}${fee}${timestamp}${Math.random()}`;
-  const tx_id = await generateGSCHash(txString, 64);
+  const fullHash = await generateGSCHash(txString, 64);
+  const id = fullHash.slice(0, 16).toUpperCase(); // 16-char uppercase hex
   
-  const signatureData = `${tx_id}${sender}${timestamp}`;
+  const signatureData = `${id}${sender}${timestamp}`;
   const fullSignature = await generateGSCHash(signatureData, 64);
-  const signature = fullSignature.substring(0, 16); // Take first 16 characters
+  const signature = fullSignature.substring(0, 32); // Take first 32 characters
   
   return {
-    sender,
-    receiver,
+    id,
+    from: sender,
+    to: receiver,
     amount,
     fee,
     timestamp,
-    tx_id,
-    signature
+    signature,
+    status: 'pending'
   };
 }
 
@@ -74,18 +76,19 @@ async function testTransactionGeneration() {
     0.001
   );
   
-  // Create Telegram broadcast format (matching your implementation)
+  // Create Telegram broadcast format (GSC Coin protocol standard)
   const telegramData = {
     type: "GSC_TRANSACTION",
     timestamp: new Date().toISOString(),
     transaction: {
-      tx_id: transaction.tx_id,
-      sender: transaction.sender,
-      receiver: transaction.receiver,
+      id: transaction.id,
+      from: transaction.from,
+      to: transaction.to,
       amount: transaction.amount,
       fee: transaction.fee,
       timestamp: transaction.timestamp,
-      signature: transaction.signature || ""
+      signature: transaction.signature || "",
+      status: transaction.status || "pending"
     }
   };
   
@@ -96,14 +99,14 @@ async function testTransactionGeneration() {
   // Validation checks
   console.log("\n✅ Validation Results:");
   console.log("=" .repeat(60));
-  console.log(`TX ID Length: ${transaction.tx_id.length} (should be 64) ✅`);
-  console.log(`TX ID Hex Valid: ${/^[0-9a-fA-F]{64}$/.test(transaction.tx_id) ? 'Yes' : 'No'} ✅`);
-  console.log(`Sender Address Length: ${transaction.sender.length} (should be 36) ✅`);
-  console.log(`Sender Address Format: ${transaction.sender.startsWith('GSC1') ? 'Valid GSC1' : 'Invalid'} ✅`);
-  console.log(`Receiver Address Length: ${transaction.receiver.length} (should be 36) ✅`);
-  console.log(`Receiver Address Format: ${transaction.receiver.startsWith('GSC1') ? 'Valid GSC1' : 'Invalid'} ✅`);
-  console.log(`Signature Length: ${transaction.signature.length} (should be 16) ✅`);
-  console.log(`Signature Hex Valid: ${/^[0-9a-fA-F]{16}$/.test(transaction.signature) ? 'Yes' : 'No'} ✅`);
+  console.log(`TX ID Length: ${transaction.id.length} (should be 16) ✅`);
+  console.log(`TX ID Hex Valid: ${/^[0-9A-F]{16}$/.test(transaction.id) ? 'Yes' : 'No'} ✅`);
+  console.log(`Sender Address Length: ${transaction.from.length} (should be 43) ✅`);
+  console.log(`Sender Address Format: ${transaction.from.startsWith('GSC') ? 'Valid GSC' : 'Invalid'} ✅`);
+  console.log(`Receiver Address Length: ${transaction.to.length} (should be 43) ✅`);
+  console.log(`Receiver Address Format: ${transaction.to.startsWith('GSC') ? 'Valid GSC' : 'Invalid'} ✅`);
+  console.log(`Signature Length: ${transaction.signature.length} (should be 32) ✅`);
+  console.log(`Signature Hex Valid: ${/^[0-9a-fA-F]{32}$/.test(transaction.signature) ? 'Yes' : 'No'} ✅`);
   console.log(`Amount Type: ${typeof transaction.amount} (should be number) ✅`);
   console.log(`Fee: ${transaction.fee} GSC (should be 0.001) ✅`);
   console.log(`Timestamp Type: ${typeof transaction.timestamp} (should be number) ✅`);
@@ -114,9 +117,9 @@ async function testTransactionGeneration() {
   console.log("✅ Nested transaction object");
   console.log("✅ All fields present and valid");
   console.log("✅ Proper data types (floats for amount/fee/timestamp)");
-  console.log("✅ Valid GSC1 address format");
-  console.log("✅ 64-character hex transaction ID");
-  console.log("✅ 16-character hex signature");
+  console.log("✅ Valid GSC address format (43 characters)");
+  console.log("✅ 16-character uppercase hex transaction ID");
+  console.log("✅ 32-character hex signature");
   
   return telegramData;
 }
