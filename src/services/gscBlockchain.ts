@@ -312,7 +312,9 @@ class GSCBlockchainService {
       fee,
       timestamp,
       tx_id,
-      signature: "" // Empty signature for clone compatibility
+      signature: await this.signGSCTransaction({
+        sender, receiver, amount, fee, timestamp, tx_id, signature: ""
+      })
     };
 
     return transaction;
@@ -344,7 +346,7 @@ class GSCBlockchainService {
       }
       
       let balance = this.getWalletBalance(senderWallet.address);
-      const fee = 0.001;
+      const fee = 0.1;
       
       if (balance === 0 && senderWallet.balance > 0) {
         balance = senderWallet.balance;
@@ -641,7 +643,7 @@ class GSCBlockchainService {
       // Create the structured JSON message format matching clone project requirements
       const transactionData = {
         type: "GSC_TRANSACTION",
-        timestamp: new Date().toISOString().replace('Z', ''),
+        timestamp: new Date().toISOString(),
         transaction: {
           tx_id: transaction.tx_id,
           sender: transaction.sender,
