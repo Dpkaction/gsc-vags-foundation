@@ -312,9 +312,7 @@ class GSCBlockchainService {
       fee,
       timestamp,
       tx_id,
-      signature: await this.signGSCTransaction({
-        sender, receiver, amount, fee, timestamp, tx_id, signature: ""
-      })
+      signature: ""
     };
 
     return transaction;
@@ -641,9 +639,13 @@ class GSCBlockchainService {
       }
       
       // Create the structured JSON message format matching clone project requirements
+      const now = new Date();
+      const microseconds = String(now.getMilliseconds() * 1000 + Math.floor(Math.random() * 1000)).padStart(6, '0');
+      const timestampString = now.toISOString().replace('Z', '').replace(/\.\d{3}$/, `.${microseconds}`);
+      
       const transactionData = {
         type: "GSC_TRANSACTION",
-        timestamp: new Date().toISOString(),
+        timestamp: timestampString,
         transaction: {
           tx_id: transaction.tx_id,
           sender: transaction.sender,
